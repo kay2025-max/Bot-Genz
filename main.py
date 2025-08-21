@@ -6,6 +6,7 @@ import random
 import os
 import re
 from datetime import datetime, timedelta
+from config import REACTION_ROLE
 
 # Bot setup with all necessary intents
 intents = discord.Intents.default()
@@ -58,6 +59,48 @@ async def on_ready():
         print(f'Lỗi đồng bộ commands: {e}')
 
 # MODERATION COMMANDS
+
+@bot.command()
+async def reactionrole(ctx):
+    """Gửi reaction role"""
+    embed = discord.Embed(
+        title="Chọn role bằng emoji 🎭",
+        description=(
+            "🎉 = Giveaway Ping\n"
+            "🎮 = Roblox\n"
+            "⚔️ = Liên Quân\n"
+            "⛏️ = Minecraft\n"
+            "🔔 = Update Ping\n"
+            "🤝 = Partner Ping"
+        ),
+        color=discord.Color.green()
+    )
+    msg = await ctx.send(embed=embed)
+
+    # Thêm emoji vào message
+    for emoji in REACTION_ROLE.keys():
+        await msg.add_reaction(emoji)
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    """Khi user react"""
+    if payload.member.bot:
+        return
+    guild = bot.get_guild(payload.guild_id)
+    role_id = REACTION_ROLE.get(str(payload.emoji))
+    if role_id:
+        role = guild.get_role(role_id)
+        await payload.member.add_roles(role)
+
+@bot.event
+async def on_raw_reaction_remove(payload):
+    """Khi user bỏ react"""
+    guild = bot.get_guild(payload.guild_id)
+    member = guild.get_member(payload.user_id)
+    role_id = REACTION_ROLE.get(str(payload.emoji))
+    if role_id and member:
+        role = guild.get_role(role_id)
+        await member.remove_roles(role)
 
 @bot.tree.command(name="mute", description="Tắt tiếng thành viên")
 async def mute_slash(interaction: discord.Interaction, member: discord.Member, duration: str = "60m", reason: str = "Không có lý do"):
